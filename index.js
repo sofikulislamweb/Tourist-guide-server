@@ -46,13 +46,14 @@ async function run() {
             res.json(result);
         });
 
+
         // get api
         app.get("/manageallorder", async (req, res) => {
             const manageorder = await placeBookingCollection.find({}).toArray();
             res.send(manageorder);
         });
 
-        // get api for place booking
+        // get api for place mybooking
         app.get("/mybooking/:email", async (req, res) => {
             const email = req.params.email;
             const mybooking = await placeBookingCollection
