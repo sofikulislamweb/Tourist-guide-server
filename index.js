@@ -14,12 +14,14 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.yrluy.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 // server and mongodb connection
+console.log(uri);
 async function run() {
     try {
         await client.connect();
         const database = client.db("tour");
         const destinationCollection = database.collection("packages");
         const placeBookingCollection = database.collection("placeOrder");
+
         // get api for all data
         app.get("/allbooking", async (req, res) => {
             const cursor = destinationCollection.find({});
@@ -34,7 +36,6 @@ async function run() {
             const singleBookingInfo = await destinationCollection.findOne(
                 query
             );
-            // console.log(singleBookingInfo);
             res.send(singleBookingInfo);
         });
 
@@ -42,7 +43,6 @@ async function run() {
         app.post("/allbooking", async (req, res) => {
             const booking = req.body;
             const result = await destinationCollection.insertOne(booking);
-            // console.log("A document was inserted with the _id:", result);
             res.json(result);
         });
 
@@ -104,7 +104,8 @@ async function run() {
     }
 }
 run().catch(console.dir);
-// important code
+
+
 app.get("/", (req, res) => {
     res.send("hello tour guide");
 });
