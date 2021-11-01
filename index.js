@@ -1,85 +1,113 @@
-
-//tour-planner
-//h3jhv3F5EHrutzy2
-
-const express = require('express');
-const { MongoClient } = require('mongodb');
-require('dotenv').config();
-const cors = require('cors');
+const express = require("express");
+const { MongoClient } = require("mongodb");
+const cors = require("cors");
+const ObjectId = require("mongodb").ObjectId;
+require("dotenv").config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 4000;
 
-// middleware
 app.use(cors());
 app.use(express.json());
 
-const uri =`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.yrluy.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.yrluy.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-
-
-
+// server and mongodb connection
 async function run() {
     try {
         await client.connect();
-        const database = client.db('tour');
-        const packageCollection = database.collection('packages');
-        // const orderCollection = database.collection('orders');
-
-        //GET Packages API
-        app.get('/packages', async (req, res) => {
-            const cursor = packageCollection.find({});
-            const page = req.query.page;
-            const size = parseInt(req.query.size);
-            let products;
-            const count = await cursor.count();
-
-            if (page) {
-                products = await cursor.skip(page * size).limit(size).toArray();
-            }
-            else {
-                products = await cursor.toArray();
-            }
-
-            res.send({
-                count,
-                products
-            });
+        const database = client.db("tourWorld");
+        const destinationCollection = database.collection("destination");
+        const placeBookingCollection = database.collection("placeOrder");
+        // get api for all data
+        app.get("/allbooking", async (req, res) => {
+            const cursor = destinationCollection.find({});
+            const destinations = await cursor.toArray();
+            res.send(destinations);
         });
-        app.post('/packages', async (req, res) => {
-            const package = req.body;
-            const result = await packageCollection.insertOne(package);
-            console.log(result);
-            res.json(result)
-        })
 
-        // Use POST to get data by keys
-        // app.post('/products/byKeys', async (req, res) => {
-        //     const keys = req.body;
-        //     const query = { key: { $in: keys } }
-        //     const products = await productCollection.find(query).toArray();
-        //     res.send(products);
-        // });
+        //get api for a single data
+        app.get("/allbooking/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const singleBookingInfo = await destinationCollection.findOne(
+                query
+            );
+            // console.log(singleBookingInfo);
+            res.send(singleBookingInfo);
+        });
 
-        // // Add Orders API
-        // app.post('/orders', async (req, res) => {
-        //     const order = req.body;
-        //     const result = await orderCollection.insertOne(order);
-        //     res.json(result);
-        // })
+        // Post api
+        app.post("/allbooking", async (req, res) => {
+            const booking = req.body;
+            const result = await destinationCollection.insertOne(booking);
+            // console.log("A document was inserted with the _id:", result);
+            res.json(result);
+        });
 
-    }
-    finally {
-        // await client.close();
+        // get api
+        app.get("/manageallorder", async (req, res) => {
+            const manageorder = await placeBookingCollection.find({}).toArray();
+            res.send(manageorder);
+        });
+
+        // get api for place booking
+        app.get("/mybooking/:email", async (req, res) => {
+            const email = req.params.email;
+            const mybooking = await placeBookingCollection
+                .find({ email })
+                .toArray();
+            // console.log(mybooking);
+            res.send(mybooking);
+        });
+
+        // delete api for my booking
+        app.delete("/mybooking/:id", async (req, res) => {
+            const bookingId = req.params.id;
+            const query = { _id: ObjectId(bookingId) };
+            const deleteBooking = await placeBookingCollection.deleteOne(query);
+            // console.log(deleteBooking);
+            res.json(deleteBooking);
+        });
+
+        // update api for status
+        app.put("/mybooking/:id", async (req, res) => {
+            const updateId = req.params.id;
+            const updatedStatus = req.body;
+            // console.log(updatedStatus);
+            const filter = { _id: ObjectId(updateId) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    status: updatedStatus.status,
+                },
+            };
+            const approvedres = await placeBookingCollection.updateOne(
+                filter,
+                updateDoc,
+                options
+            );
+            // console.log(result);
+            res.json(approvedres);
+        });
+
+        // post api for booking order collection
+        app.post("/placebooking", async (req, res) => {
+            const placebooking = req.body;
+            const result = await placeBookingCollection.insertOne(placebooking);
+            // console.log("A document was inserted with the _id:", result);
+            res.json(result);
+        });
+    } finally {
+        //   await client.close();
     }
 }
-
 run().catch(console.dir);
-
-app.get('/', (req, res) => {
-    res.send('Tour planner server is running');
+// important code
+app.get("/", (req, res) => {
+    res.send("hello tour guide");
 });
-
 app.listen(port, () => {
-    console.log('Server running at port', port);
-})
+    console.log(`Example app listening at http://localhost:${port}`);
+});
