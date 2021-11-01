@@ -59,7 +59,7 @@ async function run() {
             const mybooking = await placeBookingCollection
                 .find({ email })
                 .toArray();
-            // console.log(mybooking);
+            // console.log(mybookingree);
             res.send(mybooking);
         });
 
